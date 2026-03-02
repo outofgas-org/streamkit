@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useSubscribe } from "@bunstack/hooks";
+import { useSubscribe } from "@outofgas/react-stream";
 import type {
   ISubscription,
   L2BookWsEvent,

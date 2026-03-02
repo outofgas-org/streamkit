@@ -12,7 +12,7 @@
     "paths": {
       "@bunstack/core": ["packages/core/src/index.ts"],
       "@bunstack/utils": ["packages/utils/src/index.ts"],
-      "@bunstack/hooks": ["packages/hooks/src/index.ts"]
+      "@outofgas/react-stream": ["packages/hooks/src/index.ts"]
     }
   }
 }

@@ -75,13 +75,10 @@ export function useSubscribe<TRaw, TData = TRaw>(options: UseSubscribeOptions<TR
     acquireSubscription(normalizedKey, () =>
       startSubscription({
         onData: (raw) => {
-          if (tokenRef.current !== token) return;
-
           const data = mapData(raw);
           store.setState({ data, ready: true, loading: false, error: undefined });
         },
         onError: (error) => {
-          if (tokenRef.current !== token) return;
           store.setState({ error: error.message, loading: false });
         },
       }),
@@ -96,7 +93,6 @@ export function useSubscribe<TRaw, TData = TRaw>(options: UseSubscribeOptions<TR
       });
 
     return () => {
-      tokenRef.current += 1;
       releaseSubscription(normalizedKey);
       releaseStore(normalizedKey);
     };

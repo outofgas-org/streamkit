@@ -75,3 +75,64 @@ test("useSubscribe shares a subscription for identical keys", async () => {
   second.unmount();
   expect(unsubscribe).toHaveBeenCalledTimes(1);
 });
+
+test("useSubscribe handles re-renders and StrictMode-like double mounts", async () => {
+  let handlers: any;
+  const subscribe = mock((nextHandlers) => {
+    handlers = nextHandlers;
+    return { unsubscribe: mock(() => {}) };
+  });
+
+  const { result, rerender } = renderHook(({ key }) =>
+    useSubscribe({
+      key,
+      subscribe,
+    }),
+    { initialProps: { key: "test-key" } }
+  );
+
+  // Simulate a re-render/re-mount by calling rerender with same key
+  // In a real StrictMode or fast re-render, the tokenRef.current would increment
+  // but the subscription would be reused.
+  rerender({ key: "test-key" });
+
+  await act(async () => {
+    handlers?.onData("new-data");
+    await Promise.resolve();
+  });
+
+  expect(result.current.data).toBe("new-data");
+});
+
+test("useSubscribe handles mapData/select closure updates via useEffectEvent", async () => {
+  let handlers: any;
+  const subscribe = mock((nextHandlers) => {
+    handlers = nextHandlers;
+    return { unsubscribe: mock(() => {}) };
+  });
+
+  const { result, rerender } = renderHook(({ factor }) =>
+    useSubscribe({
+      key: "closure-test",
+      subscribe,
+      select: (val: number) => val * factor,
+    }),
+    { initialProps: { factor: 1 } }
+  );
+
+  await act(async () => {
+    handlers?.onData(10);
+    await Promise.resolve();
+  });
+  expect(result.current.data).toBe(10);
+
+  // Rerender with new factor, but same key
+  rerender({ factor: 2 });
+
+  await act(async () => {
+    handlers?.onData(10);
+    await Promise.resolve();
+  });
+  // Should use new factor even though handlers were created in first render
+  expect(result.current.data).toBe(20);
+});

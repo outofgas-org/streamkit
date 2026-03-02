@@ -1,4 +1,4 @@
-# @bunstack/hooks
+# @outofgas/react-stream
 
 React hooks for the local workspace.
 
@@ -9,7 +9,7 @@ This package is intended for source-first usage inside the monorepo. Consumers s
 ## Example
 
 ```tsx
-import { useSubscribe } from "@bunstack/hooks";
+import { useSubscribe } from "@outofgas/react-stream";
 
 function Feed() {
   const state = useSubscribe({

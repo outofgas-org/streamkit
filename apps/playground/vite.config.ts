@@ -12,7 +12,7 @@ export default defineConfig({
       "@bunstack/utils": fileURLToPath(
         new URL("../../packages/utils/src/index.ts", import.meta.url),
       ),
-      "@bunstack/hooks": fileURLToPath(
+      "@outofgas/react-stream": fileURLToPath(
         new URL("../../packages/hooks/src/index.ts", import.meta.url),
       ),
       "@nktkas/hyperliquid": fileURLToPath(
