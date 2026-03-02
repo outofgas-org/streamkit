@@ -1,0 +1,25 @@
+{
+  "name": "@bunstack/core",
+  "version": "0.1.0",
+  "description": "Shared core helpers for the starter workspace.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "README.md"],
+  "keywords": ["bun", "monorepo", "utilities", "helpers", "typescript"],
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm --clean",
+    "test": "bun test src/*.test.ts",
+    "typecheck": "bun x tsc -p tsconfig.json --noEmit"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "sideEffects": false,
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

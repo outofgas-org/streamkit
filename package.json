@@ -1,0 +1,30 @@
+{
+  "name": "streamkit",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --cwd apps/playground dev",
+    "clean": "find . -type d \\( -name dist -o -name coverage -o -name node_modules \\) -prune -exec rm -rf '{}' + && find . -type f -name '*.tsbuildinfo' -delete",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "changeset publish",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "test": "bun run --workspaces --if-present --sequential test",
+    "typecheck": "bun run --workspaces --if-present --sequential typecheck",
+    "build": "bun run --workspaces --if-present --sequential build",
+    "check": "bun run lint && bun run test && bun run typecheck && bun run build"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.7",
+    "@biomejs/biome": "^1.9.4",
+    "@types/bun": "latest",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}

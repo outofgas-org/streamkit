@@ -1,0 +1,23 @@
+{
+  "name": "@bunstack/utils",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm --clean",
+    "test": "bun test src/*.test.ts",
+    "typecheck": "bun x tsc -p tsconfig.json --noEmit"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "sideEffects": false,
+  "peerDependencies": {
+    "typescript": "^5.9.3"
+  }
+}

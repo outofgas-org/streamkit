@@ -1,0 +1,21 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@bunstack/core": [
+        "../../packages/core/src/index.ts"
+      ],
+      "@bunstack/hooks": [
+        "../../packages/hooks/src/index.ts"
+      ],
+      "@bunstack/utils": [
+        "../../packages/utils/src/index.ts"
+      ],
+      "@nktkas/hyperliquid": [
+        "../../../../88ups-interface/node_modules/@nktkas/hyperliquid"
+      ]
+    }
+  },
+  "include": ["src/**/*"]
+}

@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "declaration": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@bunstack/core": ["packages/core/src/index.ts"],
+      "@bunstack/utils": ["packages/utils/src/index.ts"],
+      "@bunstack/hooks": ["packages/hooks/src/index.ts"]
+    }
+  }
+}
