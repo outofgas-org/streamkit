@@ -9,6 +9,7 @@ import type {
 
 const MAX_TRADES = 12;
 const MAX_LEVELS = 8;
+const HL_NSIGFIGS = [5, 4, 3, 2] as const;
 
 export type RawLevel =
   | {
@@ -19,8 +20,12 @@ export type RawLevel =
 
 export type OrderbookSnapshot = {
   coin: string;
-  bids: Array<{ price: number; size: number }>;
-  asks: Array<{ price: number; size: number }>;
+  bids: Array<[price: number, size: number, cumulativeSize: number]>;
+  asks: Array<[price: number, size: number, cumulativeSize: number]>;
+  maxCumulativeSize: number;
+  levels: Array<{ nSigFigs: number; tick: string }>;
+  spread: number;
+  spreadPercent: number;
 };
 
 export type TradeRow = {
@@ -31,6 +36,10 @@ export type TradeRow = {
   time: number;
   tid: number;
   hash?: string;
+};
+
+export type UsePerpOrderbookOptions = {
+  nSigFigs?: number;
 };
 
 function parseLevel(level: RawLevel): { price: number; size: number } | null {
@@ -56,34 +65,83 @@ function parseLevel(level: RawLevel): { price: number; size: number } | null {
   return { price: parsedPrice, size: parsedSize };
 }
 
-function parseOrderbookMessage(message: L2BookWsEvent, coin: string): OrderbookSnapshot | undefined {
-  if (message.coin !== coin || !Array.isArray(message.levels) || message.levels.length < 2) {
+function calcOrderbookLevels(price: number) {
+  if (!Number.isFinite(price) || price <= 0) {
+    return [];
+  }
+
+  const magnitude = Math.floor(Math.log10(price));
+
+  return HL_NSIGFIGS.map((nSigFigs) => ({
+    nSigFigs,
+    tick: String(10 ** (magnitude - nSigFigs + 1)),
+  }));
+}
+
+function withCumulativeSize(levels: RawLevel[]) {
+  let cumulativeSize = 0;
+
+  return levels
+    .map(parseLevel)
+    .filter((level): level is { price: number; size: number } => level !== null)
+    .slice(0, MAX_LEVELS)
+    .map(({ price, size }) => {
+      cumulativeSize += size;
+      return [price, size, cumulativeSize] as [number, number, number];
+    });
+}
+
+function parseOrderbookMessage(
+  message: L2BookWsEvent,
+  coin: string,
+): OrderbookSnapshot | undefined {
+  if (
+    message.coin !== coin ||
+    !Array.isArray(message.levels) ||
+    message.levels.length < 2
+  ) {
     return undefined;
   }
 
   const [bids, asks] = message.levels;
+  const formattedBids = withCumulativeSize(bids);
+  const formattedAsks = withCumulativeSize(asks);
+  const maxCumulativeSize = Math.max(
+    ...formattedBids.map(([, , cumulativeSize]) => cumulativeSize),
+    ...formattedAsks.map(([, , cumulativeSize]) => cumulativeSize),
+    0,
+  );
+  const bestBid = formattedBids[0]?.[0];
+  const bestAsk = formattedAsks[0]?.[0];
+  const hasSpread = bestBid !== undefined && bestAsk !== undefined;
+  const midPrice = hasSpread
+    ? (bestAsk + bestBid) / 2
+    : (bestAsk ?? bestBid ?? 0);
+  const spread = hasSpread ? bestAsk - bestBid : 0;
+  const spreadPercent = midPrice > 0 ? spread / midPrice : 0;
 
   return {
     coin,
-    bids: bids
-      .map(parseLevel)
-      .filter((level): level is { price: number; size: number } => level !== null)
-      .slice(0, MAX_LEVELS),
-    asks: asks
-      .map(parseLevel)
-      .filter((level): level is { price: number; size: number } => level !== null)
-      .slice(0, MAX_LEVELS),
+    bids: formattedBids,
+    asks: formattedAsks,
+    maxCumulativeSize,
+    levels: calcOrderbookLevels(midPrice),
+    spread,
+    spreadPercent,
   };
 }
 
 export function usePerpOrderbook(
   wsClient: SubscriptionClient,
   coin: string,
+  options: UsePerpOrderbookOptions = {},
 ) {
+  const { nSigFigs } = options;
+
   return useSubscribe<OrderbookSnapshot>({
-    key: ["hyperliquid", "l2Book", coin],
+    key: ["hyperliquid", "l2Book", coin, nSigFigs],
     subscribe: async ({ onData, onError }) =>
-      wsClient.l2Book({ coin }, (message: L2BookWsEvent) => {
+      wsClient.l2Book({ coin, nSigFigs }, (message: L2BookWsEvent) => {
         try {
           const next = parseOrderbookMessage(message, coin);
           if (next) {
@@ -100,10 +158,7 @@ export function usePerpOrderbook(
   });
 }
 
-export function usePerpTrades(
-  wsClient: SubscriptionClient,
-  coin: string,
-) {
+export function usePerpTrades(wsClient: SubscriptionClient, coin: string) {
   const parseTrades = useMemo(() => {
     const tradesById = new Map<number, TradeRow>();
 
